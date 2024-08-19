@@ -48,6 +48,7 @@ from models.common import (
     GhostBottleneck,
     GhostConv,
     Proto,
+    QuantConv
 )
 from models.experimental import MixConv2d
 from utils.autoanchor import check_anchor_order
@@ -398,6 +399,7 @@ def parse_model(d, ch):
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in {
             Conv,
+            QuantConv,
             GhostConv,
             Bottleneck,
             GhostBottleneck,

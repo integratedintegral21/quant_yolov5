@@ -468,6 +468,7 @@ class ModelEMA:
         d = self.decay(self.updates)
 
         msd = de_parallel(model).state_dict()  # model state_dict
+        self.ema = deepcopy(de_parallel(model)).eval()
         for k, v in self.ema.state_dict().items():
             if v.dtype.is_floating_point:  # true for FP16 and FP32
                 v *= d

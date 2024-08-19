@@ -22,6 +22,9 @@ import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
 
+import brevitas.nn as qnn
+from brevitas.quant import Int8WeightPerTensorFloat, Int8ActPerTensorFloat, Int32Bias
+
 # Import 'ultralytics' package or install if missing
 try:
     import ultralytics
@@ -87,6 +90,24 @@ class Conv(nn.Module):
 
     def forward_fuse(self, x):
         """Applies a fused convolution and activation function to the input tensor `x`."""
+        return self.act(self.conv(x))
+
+
+class QuantConv(nn.Module):
+    default_act = qnn.QuantReLU(bit_width=8, return_quant_tensor=True)
+
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
+        super().__init__()
+        self.conv = qnn.QuantConv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False,
+                                    bias_quant=Int32Bias,
+                                    weight_bit_width=8, output_quant=Int8ActPerTensorFloat)
+        self.bn = nn.BatchNorm2d(c2)
+        self.act = self.default_act
+
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
+
+    def forward_fuse(self, x):
         return self.act(self.conv(x))
 
 
