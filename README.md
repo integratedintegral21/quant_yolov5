@@ -404,6 +404,17 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 
 </details>
 
+## <div align="center">Quantization (Work in progress...)</div>
+Quantization-aware training (QAT) is available for yolov3-tiny models. QAT is implemented using [Brevitas](https://xilinx.github.io/brevitas/).
+<details>
+  <summary>Quantization training</summary>
+bash python3 train.py --batch 24 --data data/coco128.yaml --img 416 --cfg models/yolov3-tiny-quant.yaml --weights yolov3-tiny.pt
+</details>
+
+### <div align="center">Planned features</div>
+- ONNX export for quantized models
+- [FINN](https://xilinx.github.io/finn/) compilation for FPGA deployment
+
 ## <div align="center">Environments</div>
 
 Get started in seconds with our verified environments. Click each icon below for details.
