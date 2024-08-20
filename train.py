@@ -365,6 +365,7 @@ def train(hyp, opt, device, callbacks):
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run("on_train_epoch_start")
         model.train()
+        model.model.to(device)
 
         # Update image weights (optional, single-GPU only)
         if opt.image_weights:
@@ -489,6 +490,10 @@ def train(hyp, opt, device, callbacks):
                     "git": GIT_INFO,  # {remote, branch, commit} if a git repo
                     "date": datetime.now().isoformat(),
                 }
+
+                # ckpt = {
+                #     "model_weights": deepcopy(de_parallel(model)).state_dict(),
+                # }
 
                 # Save last, best and delete
                 torch.save(ckpt, last)
