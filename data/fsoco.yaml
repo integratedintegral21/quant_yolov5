@@ -1,0 +1,5 @@
+train: ../datasets/fsoco-yolo/train/images
+val: ../datasets/fsoco-yolo/valid/images
+test: ../datasets/fsoco-yolo/test/images
+nc: 5
+names: ['yellow_cone', 'blue_cone', 'orange_cone', 'large_orange_cone',  'unknown_cone']
