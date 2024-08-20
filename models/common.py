@@ -283,8 +283,7 @@ class QuantC3(nn.Module):
         self.cv1 = QuantConv(c1, c_, 1, 1)
         self.cv2 = QuantConv(c1, c_, 1, 1)
         self.cv3 = QuantConv(2 * c_, c2, 1)  # act=FReLU(c2)
-        self.m = nn.Sequential(*[QuantBottleneck(c_, c_, shortcut, g, e=1.0)
-                                 for _ in range(n)])
+        self.m = nn.Sequential(*(QuantBottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)))
         # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
         if self.use_hardtanh:
             self.hard_quant = qnn.QuantHardTanh(
