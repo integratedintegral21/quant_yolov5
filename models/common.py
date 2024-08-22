@@ -94,7 +94,7 @@ class Conv(nn.Module):
 
 
 class QuantConv(nn.Module):
-    default_act = qnn.QuantReLU(bit_width=8, return_quant_tensor=True)
+    default_act = qnn.QuantReLU(bit_width=3, return_quant_tensor=True)
 
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         super().__init__()
@@ -288,7 +288,7 @@ class QuantC3(nn.Module):
         if self.use_hardtanh:
             self.hard_quant = qnn.QuantHardTanh(
                 max_val=1.0, min_val=-1.0,
-                bit_width=8)
+                bit_width=3)
 
     def forward(self, x):
         out = self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
