@@ -502,6 +502,7 @@ def train(hyp, opt, device, callbacks):
                                    "Brevitas models)")
                     ckpt = {
                         "model_weights": deepcopy(de_parallel(model)).state_dict(),
+                        "anchors": deepcopy(de_parallel(model)).yaml["anchors"],
                     }
 
                 torch.save(ckpt, last)
