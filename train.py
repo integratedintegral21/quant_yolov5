@@ -499,7 +499,7 @@ def train(hyp, opt, device, callbacks):
                     torch.save(ckpt, last)
                 except PicklingError:  # Brevitas quantizers do not like to be pickled
                     LOGGER.warning("Unable to save the model. Only state_dict() will be saved (this can be ignored for"
-                                   "Brevitas models)")
+                                   " Brevitas models)")
                     ckpt = {
                         "brevitas": True,
                         "model_weights": deepcopy(de_parallel(model)).state_dict(),

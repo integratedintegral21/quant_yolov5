@@ -85,7 +85,7 @@ class Ensemble(nn.ModuleList):
         return y, None  # inference, train output
 
 
-def attempt_load(weights, device=None, inplace=True, fuse=True):
+def attempt_load(weights, device=None, inplace=True, fuse=True, cfg="", nc=None):
     """
     Loads and fuses an ensemble or single YOLOv5 model from weights, handling device placement and model adjustments.
 
@@ -93,18 +93,28 @@ def attempt_load(weights, device=None, inplace=True, fuse=True):
     """
     from models.yolo import Detect, Model
 
-    model = Ensemble()
+    if cfg:
+        model = Model(cfg, ch=3, nc=nc).to(device).float()
+    else:
+        model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location="cpu")  # load
-        ckpt = (ckpt.get("ema") or ckpt["model"]).to(device).float()  # FP32 model
+        if ckpt.get("brevitas"):
+            weights = ckpt["model_weights"]
+            anchors = ckpt["anchors"]
+            model.load_state_dict(weights, strict=False)
+            model.yaml["anchors"] = anchors
+            return model
+        else:
+            ckpt = (ckpt.get("ema") or ckpt["model"]).to(device).float()  # FP32 model
 
-        # Model compatibility updates
-        if not hasattr(ckpt, "stride"):
-            ckpt.stride = torch.tensor([32.0])
-        if hasattr(ckpt, "names") and isinstance(ckpt.names, (list, tuple)):
-            ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
+            # Model compatibility updates
+            if not hasattr(ckpt, "stride"):
+                ckpt.stride = torch.tensor([32.0])
+            if hasattr(ckpt, "names") and isinstance(ckpt.names, (list, tuple)):
+                ckpt.names = dict(enumerate(ckpt.names))  # convert to dict
 
-        model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, "fuse") else ckpt.eval())  # model in eval mode
+            model.append(ckpt.fuse().eval() if fuse and hasattr(ckpt, "fuse") else ckpt.eval())  # model in eval mode
 
     # Module updates
     for m in model.modules():

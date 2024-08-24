@@ -94,7 +94,7 @@ class Conv(nn.Module):
 
 
 class QuantConv(nn.Module):
-    default_act = qnn.QuantReLU(bit_width=3, return_quant_tensor=True)
+    default_act = qnn.QuantReLU(bit_width=8, return_quant_tensor=True)
 
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         super().__init__()
@@ -288,7 +288,7 @@ class QuantC3(nn.Module):
         if self.use_hardtanh:
             self.hard_quant = qnn.QuantHardTanh(
                 max_val=1.0, min_val=-1.0,
-                bit_width=3)
+                bit_width=8)
 
     def forward(self, x):
         out = self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
@@ -514,7 +514,8 @@ class Concat(nn.Module):
 
 class DetectMultiBackend(nn.Module):
     # YOLOv5 MultiBackend class for python inference on various backends
-    def __init__(self, weights="yolov5s.pt", device=torch.device("cpu"), dnn=False, data=None, fp16=False, fuse=True):
+    def __init__(self, weights="yolov5s.pt", device=torch.device("cpu"), dnn=False, data=None, fp16=False, fuse=True,
+                 cfg="", nc=None):
         """Initializes DetectMultiBackend with support for various inference backends, including PyTorch and ONNX."""
         #   PyTorch:              weights = *.pt
         #   TorchScript:                    *.torchscript
@@ -541,7 +542,8 @@ class DetectMultiBackend(nn.Module):
             w = attempt_download(w)  # download if not local
 
         if pt:  # PyTorch
-            model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse)
+            model = attempt_load(weights if isinstance(weights, list) else w, device=device, inplace=True, fuse=fuse,
+                                 cfg=cfg, nc=None)
             stride = max(int(model.stride.max()), 32)  # model stride
             names = model.module.names if hasattr(model, "module") else model.names  # get class names
             model.half() if fp16 else model.float()

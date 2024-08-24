@@ -187,6 +187,7 @@ def process_batch(detections, labels, iouv):
 @smart_inference_mode()
 def run(
     data,
+    cfg="",
     weights=None,  # model.pt path(s)
     batch_size=32,  # batch size
     imgsz=640,  # inference size (pixels)
@@ -266,8 +267,11 @@ def run(
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
         (save_dir / "labels" if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
+        # Data
+        data = check_dataset(data)  # check
+
         # Load model
-        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+        model = DetectMultiBackend(weights, cfg=cfg, device=device, dnn=dnn, data=data, fp16=half, nc=data["nc"])
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
@@ -279,9 +283,7 @@ def run(
                 batch_size = 1  # export.py models default to batch-size 1
                 LOGGER.info(f"Forcing --batch-size 1 square inference (1,3,{imgsz},{imgsz}) for non-PyTorch models")
 
-        # Data
-        data = check_dataset(data)  # check
-
+        model.model.nc = data["nc"]
     # Configure
     model.eval()
     cuda = device.type != "cpu"
@@ -516,6 +518,7 @@ def parse_opt():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path")
+    parser.add_argument("--cfg", type=str, default="", help="model.yaml path")
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model path(s)")
     parser.add_argument("--batch-size", type=int, default=32, help="batch size")
     parser.add_argument("--imgsz", "--img", "--img-size", type=int, default=640, help="inference size (pixels)")
