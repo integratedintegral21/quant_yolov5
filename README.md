@@ -43,6 +43,10 @@ To request an Enterprise License please complete the form at [Ultralytics Licens
 </div>
 <br>
 
+## <div align="center">Qunatized YOLO</div>
+This fork adds tools for training and evaluating quantized YOLO models. The [Brevitas](https://github.com/Xilinx/brevitas) 
+framework was used to implement quantized versions of YOLO models.
+
 ## <div align="center">YOLOv8 🚀 NEW</div>
 
 We are thrilled to announce the launch of Ultralytics YOLOv8 🚀, our NEW cutting-edge, state-of-the-art (SOTA) model released at **[https://github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)**. YOLOv8 is designed to be fast, accurate, and easy to use, making it an excellent choice for a wide range of object detection, image segmentation and image classification tasks.
@@ -407,11 +411,32 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 ## <div align="center">Quantization (Work in progress...)</div>
 Quantization-aware training (QAT) is available for yolov3-tiny models. QAT is implemented using [Brevitas](https://xilinx.github.io/brevitas/).
 <details>
-  <summary>Quantization training</summary>
-bash python3 train.py --batch 24 --data data/coco128.yaml --img 416 --cfg models/yolov3-tiny-quant.yaml --weights yolov3-tiny.pt
+  <summary>yolov5s QAT example</summary>
+
+The experiments were performed on the [FSOCO](https://www.fsoco-dataset.com/) dataset. For now, only 8-bit quantization is available.
+
+### Train the FP model
+First, let's train the non-quantized version the yolov5s model on the FSOCO dataset.
+```bash
+python3 train.py --multiscale --epochs 100 --img 640 --batch 16 --data data/fsoco.yaml --cfg models/yolov5s-quant.yaml --weights yolov5s.pt
+```
+
+### Fine tune the original model to use ReLU
+The SiLU activation might be inefficient on hardware accelerators, thus it should be replaced with ReLU.
+```bash
+python3 train.py --epochs 1 --img 640 --batch 16 --data data/fsoco.yaml --cfg models/yolov5s.yaml --weights runs/train/yolov5s_cones_multiscale/weights/best.pt --hyp data/hyps/hyp-relu-tune.yaml
+```
+
+### Quantization-aware training (QAT)
+Finally, train the Brevitas model
+
+```bash
+python3 train.py --epochs 15 --img 640 --batch 24 --data data/fsoco.yaml --cfg models/yolov5s-quant.yaml --weights runs/train/yolov5s_cones_relu/weights/last.pt --h
+yp data/hyps/hyp-qat.yaml
+```
 </details>
 
-### <div align="center">Planned features</div>
+### <div align="center">Available soon</div>
 - ONNX export for quantized models
 - [FINN](https://xilinx.github.io/finn/) compilation for FPGA deployment
 
