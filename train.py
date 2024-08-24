@@ -26,7 +26,13 @@ from copyreg import pickle
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import brevitas.nn as qnn
+import torch
+from brevitas.export import export_onnx_qcdq, export_qonnx
+
 from pickle import PicklingError
+
+from dropbox.files import export
 
 try:
     import comet_ml  # must be imported before torch (if installed)
@@ -536,6 +542,11 @@ def train(hyp, opt, device, callbacks):
                 else:   # Brevitas models
                     LOGGER.info("Loading state_dict only")
                     model.load_state_dict(ckpt["model_weights"], strict=False)
+
+                    # Export to qonnx
+                    inp = torch.randn((1, 3, imgsz, imgsz))
+                    path = os.path.dirname(f) + "/model.onnx"
+                    export_onnx_qcdq(model.to('cpu'), args=inp, export_path=path)
                     model.to(device)
                 if f is best:
                     LOGGER.info(f"\nValidating {f}...")
