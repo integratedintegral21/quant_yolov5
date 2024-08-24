@@ -501,6 +501,7 @@ def train(hyp, opt, device, callbacks):
                     LOGGER.warning("Unable to save the model. Only state_dict() will be saved (this can be ignored for"
                                    "Brevitas models)")
                     ckpt = {
+                        "brevitas": True,
                         "model_weights": deepcopy(de_parallel(model)).state_dict(),
                         "anchors": deepcopy(de_parallel(model)).yaml["anchors"],
                     }
