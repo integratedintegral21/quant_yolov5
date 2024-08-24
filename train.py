@@ -22,8 +22,11 @@ import subprocess
 import sys
 import time
 from copy import deepcopy
+from copyreg import pickle
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from pickle import PicklingError
 
 try:
     import comet_ml  # must be imported before torch (if installed)
@@ -365,6 +368,7 @@ def train(hyp, opt, device, callbacks):
     for epoch in range(start_epoch, epochs):  # epoch ------------------------------------------------------------------
         callbacks.run("on_train_epoch_start")
         model.train()
+        model.model.to(device)
 
         # Update image weights (optional, single-GPU only)
         if opt.image_weights:
@@ -491,6 +495,17 @@ def train(hyp, opt, device, callbacks):
                 }
 
                 # Save last, best and delete
+                try:
+                    torch.save(ckpt, last)
+                except PicklingError:  # Brevitas quantizers do not like to be pickled
+                    LOGGER.warning("Unable to save the model. Only state_dict() will be saved (this can be ignored for"
+                                   " Brevitas models)")
+                    ckpt = {
+                        "brevitas": True,
+                        "model_weights": deepcopy(de_parallel(model)).state_dict(),
+                        "anchors": deepcopy(de_parallel(model)).yaml["anchors"],
+                    }
+
                 torch.save(ckpt, last)
                 if best_fitness == fi:
                     torch.save(ckpt, best)
@@ -514,14 +529,21 @@ def train(hyp, opt, device, callbacks):
         LOGGER.info(f"\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.")
         for f in last, best:
             if f.exists():
-                strip_optimizer(f)  # strip optimizers
+                ckpt = torch.load(f)  # load
+                if ckpt.get("model"):
+                    strip_optimizer(f)  # strip optimizers
+                    model = attempt_load(f, device).half()
+                else:   # Brevitas models
+                    LOGGER.info("Loading state_dict only")
+                    model.load_state_dict(ckpt["model_weights"], strict=False)
+                    model.to(device)
                 if f is best:
                     LOGGER.info(f"\nValidating {f}...")
                     results, _, _ = validate.run(
                         data_dict,
                         batch_size=batch_size // WORLD_SIZE * 2,
                         imgsz=imgsz,
-                        model=attempt_load(f, device).half(),
+                        model=model,
                         iou_thres=0.65 if is_coco else 0.60,  # best pycocotools at iou 0.65
                         single_cls=single_cls,
                         dataloader=val_loader,
