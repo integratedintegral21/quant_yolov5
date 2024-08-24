@@ -93,13 +93,12 @@ def attempt_load(weights, device=None, inplace=True, fuse=True, cfg="", nc=None)
     """
     from models.yolo import Detect, Model
 
-    if cfg:
-        model = Model(cfg, ch=3, nc=nc).to(device).float()
-    else:
-        model = Ensemble()
+    model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         ckpt = torch.load(attempt_download(w), map_location="cpu")  # load
         if ckpt.get("brevitas"):
+            print(f"Anchors: {ckpt['anchors']}")
+            model = Model(cfg, ch=3, nc=nc, anchors=ckpt["anchors"]).to(device).float()
             weights = ckpt["model_weights"]
             anchors = ckpt["anchors"]
             model.load_state_dict(weights, strict=False)
