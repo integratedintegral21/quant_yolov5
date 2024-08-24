@@ -545,8 +545,10 @@ def train(hyp, opt, device, callbacks):
 
                     # Export to qonnx
                     inp = torch.randn((1, 3, imgsz, imgsz))
-                    path = os.path.dirname(f) + "/model.onnx"
-                    export_onnx_qcdq(model.to('cpu'), args=inp, export_path=path)
+                    qdcd_path = os.path.dirname(f) + "/model.onnx"
+                    qonnx_path = os.path.dirname(f) + "/model.qonnx"
+                    export_onnx_qcdq(model.to('cpu'), args=inp, export_path=qdcd_path)
+                    export_qonnx(model.to('cpu'), args=inp, export_path=qonnx_path)
                     model.to(device)
                 if f is best:
                     LOGGER.info(f"\nValidating {f}...")
