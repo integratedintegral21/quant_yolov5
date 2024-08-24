@@ -409,7 +409,15 @@ python export.py --weights yolov5s-cls.pt resnet50.pt efficientnet_b0.pt --inclu
 </details>
 
 ## <div align="center">Quantization (Work in progress...)</div>
-Quantization-aware training (QAT) is available for yolov3-tiny models. QAT is implemented using [Brevitas](https://xilinx.github.io/brevitas/).
+Quantization-aware training (QAT) is available for yolov3-tiny and yolov5s models. QAT is implemented using [Brevitas](https://xilinx.github.io/brevitas/).
+
+Yolov5s results on the [FSOCO](https://www.fsoco-dataset.com/) dataset:
+
+| Model | mAP 50-95 |
+|-------|-----------|
+| yolov5s FP-32 | 52.9 |
+| yolov5s w8a8 | 50.3|
+
 <details>
   <summary>yolov5s QAT example</summary>
 
@@ -417,6 +425,7 @@ The experiments were performed on the [FSOCO](https://www.fsoco-dataset.com/) da
 
 ### Train the FP model
 First, let's train the non-quantized version the yolov5s model on the FSOCO dataset.
+
 ```bash
 python3 train.py --multiscale --epochs 100 --img 640 --batch 16 --data data/fsoco.yaml --cfg models/yolov5s-quant.yaml --weights yolov5s.pt
 ```
