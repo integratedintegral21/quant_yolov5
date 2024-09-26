@@ -427,7 +427,7 @@ The experiments were performed on the [FSOCO](https://www.fsoco-dataset.com/) da
 First, let's train the non-quantized version the yolov5s model on the FSOCO dataset.
 
 ```bash
-python3 train.py --multiscale --epochs 100 --img 640 --batch 16 --data data/fsoco.yaml --cfg models/yolov5s-quant.yaml --weights yolov5s.pt
+python3 train.py --multiscale --epochs 100 --img 640 --batch 16 --data data/fsoco.yaml --cfg models/yolov5s.yaml --weights yolov5s.pt
 ```
 
 ### Fine tune the original model to use ReLU
