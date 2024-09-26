@@ -25,6 +25,9 @@ from torch.cuda import amp
 import brevitas.nn as qnn
 from brevitas.quant import Int8WeightPerTensorFloat, Int8ActPerTensorFloat, Int32Bias
 
+WEIGHT_BIT_WIDTH = 4
+ACT_BIT_WIDTH = 4
+
 # Import 'ultralytics' package or install if missing
 try:
     import ultralytics
@@ -94,13 +97,13 @@ class Conv(nn.Module):
 
 
 class QuantConv(nn.Module):
-    default_act = qnn.QuantReLU(bit_width=8, return_quant_tensor=True)
+    default_act = qnn.QuantReLU(bit_width=ACT_BIT_WIDTH, return_quant_tensor=True)
 
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         super().__init__()
         self.conv = qnn.QuantConv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False,
                                     bias_quant=Int32Bias,
-                                    weight_bit_width=8, output_quant=Int8ActPerTensorFloat)
+                                    weight_bit_width=WEIGHT_BIT_WIDTH, output_quant=Int8ActPerTensorFloat)
         self.bn = nn.BatchNorm2d(c2)
         self.act = self.default_act
 
@@ -204,7 +207,7 @@ class QuantBottleneck(nn.Module):
         self.cv1 = QuantConv(c1, c_, 1, 1)
         self.cv2 = QuantConv(c_, c2, 3, 1, g=g)
         self.add = shortcut and c1 == c2
-        self.quant_identity = qnn.QuantIdentity(bit_width=8)
+        self.quant_identity = qnn.QuantIdentity(bit_width=ACT_BIT_WIDTH)
 
     def forward(self, x):
         return self.quant_identity(x) + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
@@ -288,7 +291,7 @@ class QuantC3(nn.Module):
         if self.use_hardtanh:
             self.hard_quant = qnn.QuantHardTanh(
                 max_val=1.0, min_val=-1.0,
-                bit_width=8)
+                bit_width=ACT_BIT_WIDTH)
 
     def forward(self, x):
         out = self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
@@ -386,7 +389,7 @@ class SPPF(nn.Module):
 
 class QuantSPPF(nn.Module):
     # Quantized Spatial Pyramid Pooling - Fast (QuantSPPF) layer for YOLOv5 by Glenn Jocher
-    def __init__(self, c1, c2, k=5, weight_bit_width=4, act_bit_width=2):  # equivalent to SPP(k=(5, 9, 13))
+    def __init__(self, c1, c2, k=5):  # equivalent to SPP(k=(5, 9, 13))
         super().__init__()
         c_ = c1 // 2  # hidden channels
         self.cv1 = QuantConv(c1, c_, 1, 1)
